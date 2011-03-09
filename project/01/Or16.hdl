@@ -1,0 +1,23 @@
+// This file is part of the materials accompanying the book 
+// "The Elements of Computing Systems" by Nisan and Schocken, 
+// MIT Press. Book site: www.idc.ac.il/tecs
+// File name: projects/01/Or16.hdl
+
+/**
+ * 16-bit Or gate.  For i=0..15 out[i] = a[i] or b[i]
+ */
+
+CHIP Or16 {
+
+    IN  a[16], b[16];
+    OUT out[16];
+
+    PARTS:
+    // Implementation missing.
+    
+    Not16(in = a, out = na);
+    Not16(in = b, out = nb);
+    
+    And16(a = na, b = nb, out = no);
+    Not16(in = no, out = out);
+}
