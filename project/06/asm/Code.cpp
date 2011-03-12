@@ -2,6 +2,7 @@
 #include "Code.h"
 
 using namespace hack::assembler;
+using hack::Diag;
 
 typedef std::map<std::string, int> SymbolTable;
 
@@ -70,7 +71,7 @@ void InitJumpMap(std::map<std::string, std::string>& m)
 	m["JMP"] = "111";
 }
 
-SymbolTable FirstPass(const std::vector<Command>& cmds)
+SymbolTable FirstPass(const std::vector<Command>& cmds, Diag& diag)
 {
 	SymbolTable symtab;
 	InitSymTab(symtab);
@@ -81,8 +82,7 @@ SymbolTable FirstPass(const std::vector<Command>& cmds)
 		switch (c->GetType()) {
 		case Command::LABEL:
 			if (symtab.find(c->GetSymbol()) != symtab.end())
-				throw std::runtime_error("label redefined");
-				// diag.Error(diag::err_lbl_redef, c->GetSymbol());
+				diag.Error(c->GetPosition(), diag::err_lbl_redef) << c->GetSymbol();
 			symtab[c->GetSymbol()] = pos;
 			break;
 
@@ -107,7 +107,12 @@ std::string BinaryString(int n)
 	return res;
 }
 
-std::string AInstruction(const Command& cmd, SymbolTable& symtab, int& freemem)
+int GetTruncConst(int val)
+{
+	return val & 0x7FFF;
+}
+
+std::string AInstruction(const Command& cmd, SymbolTable& symtab, int& freemem, Diag& diag)
 {
 	auto sym = cmd.GetSymbol();
 
@@ -123,13 +128,12 @@ std::string AInstruction(const Command& cmd, SymbolTable& symtab, int& freemem)
 	}
 
 	if (val >= MAX_CONST) 
-		throw std::runtime_error("constant to big");
-		// diag.Warning(diag::wrn_const, val, GetTruncConst(val));
+		diag.Warning(cmd.GetPosition(), diag::wrn_const) <<  val << GetTruncConst(val);
 
 	return "0" + BinaryString(val);
 }
 
-std::string Comp(const std::string& code)
+std::string Comp(const std::string& code, const hack::CodePosition& pos, Diag& diag)
 {
 	static std::map<std::string, std::string> map;
 	static bool initialized = false;
@@ -140,8 +144,7 @@ std::string Comp(const std::string& code)
 	}
 
 	if (map.find(code) == map.end())
-		throw std::runtime_error("Unknown comp code");
-		// diag.Error(err:unk_comp_code, code);
+		diag.Error(pos, diag::err_unk_comp_code) << code;
 
 	return map[code];
 }
@@ -157,7 +160,7 @@ std::string Dest(const std::string& code)
 	return res;
 }
 
-std::string Jump(const std::string& code)
+std::string Jump(const std::string& code, const hack::CodePosition& pos, Diag& diag)
 {
 	static std::map<std::string, std::string> map;
 	static bool initialized = false;
@@ -168,18 +171,17 @@ std::string Jump(const std::string& code)
 	}
 
 	if (map.find(code) == map.end())
-		throw std::runtime_error("Unknown jump code");
-		// diag.Error(err:unk_jump_code, code);
+		diag.Error(pos, diag::err_unk_jump_code) << code;
 
 	return map[code];
 }
 
-std::string CInstruction(const Command& cmd)
+std::string CInstruction(const Command& cmd, Diag& diag)
 {
-	return "111" + Comp(cmd.GetComp()) + Dest(cmd.GetDest()) + Jump(cmd.GetJump());
+	return "111" + Comp(cmd.GetComp(), cmd.GetPosition(), diag) + Dest(cmd.GetDest()) + Jump(cmd.GetJump(), cmd.GetPosition(), diag);
 }
 
-std::vector<std::string> SecondPass(const std::vector<Command>& cmds, SymbolTable& symtab)
+std::vector<std::string> SecondPass(const std::vector<Command>& cmds, SymbolTable& symtab, Diag& diag)
 {
 	std::vector<std::string> res;
 
@@ -192,11 +194,11 @@ std::vector<std::string> SecondPass(const std::vector<Command>& cmds, SymbolTabl
 			break;
 
 		case Command::A_CMD:
-			res.push_back(AInstruction(*c, symtab, freemem));
+			res.push_back(AInstruction(*c, symtab, freemem, diag));
 			break;
 
 		case Command::C_CMD:
-			res.push_back(CInstruction(*c));
+			res.push_back(CInstruction(*c, diag));
 			break;
 		}
 	}
@@ -204,9 +206,9 @@ std::vector<std::string> SecondPass(const std::vector<Command>& cmds, SymbolTabl
 	return res;
 }
 
-std::vector<std::string> hack::assembler::Translate(const std::vector<Command>& cmds)
+std::vector<std::string> hack::assembler::Translate(const std::vector<Command>& cmds, Diag& diag)
 {
-	auto syms = FirstPass(cmds);
-	return SecondPass(cmds, syms);
+	auto syms = FirstPass(cmds, diag);
+	return SecondPass(cmds, syms, diag);
 }
 

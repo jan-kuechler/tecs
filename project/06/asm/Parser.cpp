@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Parser.h"
+#include "DiagCodes.h"
 
 using namespace hack::assembler;
 
@@ -12,17 +13,25 @@ namespace
 	}
 };
 
-Parser::Parser(std::istream& in)
-	: inp(0)
+Parser::Parser(std::istream& in, const std::string& fileName, hack::Diag& diag)
+: inp(0), diag(diag), line(1), fileName(fileName)
 { 
 	std::string line;
 	while (std::getline(in, line))
 		input += line + '\n';
 }
 
-Parser::Parser(const std::string& in)
-	: inp(0), input(in)
+Parser::Parser(const std::string& in, const std::string& fileName, hack::Diag& diag)
+: inp(0), input(in), diag(diag), line(1), fileName(fileName)
 { }
+
+hack::CodePosition Parser::Position()
+{
+	hack::CodePosition pos;
+	pos.file = fileName;
+	pos.line = line;
+	return pos;
+}
 
 void Parser::Parse()
 {
@@ -47,8 +56,7 @@ Command Parser::ParseCmd()
 	case '/':
 		NextChar();
 		if (cur != '/')
-			throw std::runtime_error("stray '/'");
-			//diag.Error(Position(), diag::err_stray_cmt);
+			diag.Error(Position(), diag::err_stray_cmt);
 		SkipComment();
 		return ParseCmd();
 
@@ -94,12 +102,11 @@ Command Parser::ParseLabel()
 	std::string lbl = ReadSymbol();
 
 	if (cur != ')')
-		throw std::runtime_error("invalid symbol");
-		// diag.Error(Position(), diag::err_inv_sym_in_label, cur);
+		diag.Error(Position(), diag::err_inv_sym_in_label) << cur;
 
 	NextChar(); // Skip the ')'
 
-	return Command(Command::LABEL, lbl);
+	return Command(Command::LABEL, lbl, Position());
 }
 
 Command Parser::ParseAInstr()
@@ -107,35 +114,37 @@ Command Parser::ParseAInstr()
 	assert(cur == '@');
 	NextChar();
 
+	auto pos = Position();
 	if (std::isdigit(cur))
-		return Command(Command::A_CMD, ReadConst());
+		return Command(Command::A_CMD, ReadConst(), pos);
 	else if (ValidForSymbol(cur, true))
-		return Command(Command::A_CMD, ReadSymbol());
-	else
-		throw std::runtime_error("invalid @");
-		// diag.Error(Position(), diag::err_inv_at);
+		return Command(Command::A_CMD, ReadSymbol(), pos);
+	else {
+		diag.Error(pos, diag::err_inv_at);
+		return Command();
+	}
 }
 
 Command Parser::ParseCInstr()
 {
 	std::string instr;
 
+	auto pos = Position();
 	while (cur && cur != '/' && !std::isspace(cur)) {
 		instr += cur;
 		NextChar();
 	}
 
-	return SplitCInstr(instr);
+	return SplitCInstr(instr, pos);
 }
 
-Command Parser::SplitCInstr(const std::string& instr)
+Command Parser::SplitCInstr(const std::string& instr, const hack::CodePosition& pos)
 {
-	boost::regex regex("^([ADM][ADM]?[ADM]?=)?([^;]+)(;...)?$");
+	boost::regex regex("^([ADM][ADM]?[ADM]?=)?([01+\\-&|!ADM]+)(;...)?$");
 	boost::smatch match;
 
 	if (!boost::regex_search(instr, match, regex) || !match[0].matched)
-		throw std::runtime_error("Invalid C instruction");
-		// diag.Error(Position(), diag::err_inv_c_instr, instr);
+		diag.Error(pos, diag::err_inv_c_instr) << instr;
 
 	std::string dest, jump;
 
@@ -151,5 +160,5 @@ Command Parser::SplitCInstr(const std::string& instr)
 		jump = jump.substr(1);
 	}
 
-	return Command(Command::C_CMD, dest, match[2], jump);
+	return Command(Command::C_CMD, dest, match[2], jump, pos);
 }

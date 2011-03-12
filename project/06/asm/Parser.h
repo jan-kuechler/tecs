@@ -2,19 +2,24 @@
 #define PARSER_H
 
 #include "Command.h"
+#include "DiagCodes.h"
 
 namespace hack { namespace assembler {
 
 class Parser
 {
+	Diag& diag;
+
 	std::string input;
 	char cur;
 	size_t inp;
+	std::string fileName;
+	size_t line;
 
 	std::vector<Command> cmds;
 public:
-	Parser(std::istream& in);
-	Parser(const std::string& in);
+	Parser(std::istream& in, const std::string& fileName, Diag& diag);
+	Parser(const std::string& in, const std::string& fileName, Diag& diag);
 
 	void Parse();
 
@@ -43,12 +48,15 @@ private:
 	std::string ReadSymbol();
 	std::string ReadConst();
 
-	Command SplitCInstr(const std::string& instr);
+	Command SplitCInstr(const std::string& instr, const CodePosition& pos);
 
 	void SkipSpaces()
 	{
-		while (std::isspace(cur))
+		while (std::isspace(cur)) {
+			if (cur == '\n')
+				line++;
 			NextChar();
+		}
 	}
 
 	void SkipComment()
@@ -64,6 +72,8 @@ private:
 		else
 			cur = input[inp++];
 	}
+
+	CodePosition Position();
 
 };
 

@@ -60,11 +60,14 @@ int main(int argc, char* argv[])
 	try {
 		using namespace hack::assembler;
 
+		AsmDiagClient diagClient;
+		hack::Diag diag(diagClient);
+
 		std::ifstream in(inf);
-		Parser p(in);
+		Parser p(in, inf, diag);
 		p.Parse();
 
-		auto txt = Translate(p.GetCommands());
+		auto txt = Translate(p.GetCommands(), diag);
 
 		std::ofstream out(outf);
 		std::for_each(txt.begin(), txt.end(), [&out](const std::string& line) {
@@ -72,7 +75,7 @@ int main(int argc, char* argv[])
 		});
 	}
 	catch (std::exception& ex) {
-		std::cout << "Error: " << ex.what() << std::endl;
+		std::cout << ex.what() << std::endl;
 	}
 
 	return 0;
