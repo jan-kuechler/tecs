@@ -35,6 +35,7 @@ hack::CodePosition Parser::Position()
 
 void Parser::Parse()
 {
+	diag.SetErrorFatal(true, "Parser");
 	NextChar();
 	
 	Command c;

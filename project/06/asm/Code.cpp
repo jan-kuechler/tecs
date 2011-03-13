@@ -143,8 +143,10 @@ std::string Comp(const std::string& code, const hack::CodePosition& pos, Diag& d
 		initialized = true;
 	}
 
-	if (map.find(code) == map.end())
+	if (map.find(code) == map.end()) {
 		diag.Error(pos, diag::err_unk_comp_code) << code;
+		return "";
+	}
 
 	return map[code];
 }
@@ -170,8 +172,10 @@ std::string Jump(const std::string& code, const hack::CodePosition& pos, Diag& d
 		initialized = true;
 	}
 
-	if (map.find(code) == map.end())
+	if (map.find(code) == map.end()) {
 		diag.Error(pos, diag::err_unk_jump_code) << code;
+		return "";
+	}
 
 	return map[code];
 }
@@ -208,6 +212,7 @@ std::vector<std::string> SecondPass(const std::vector<Command>& cmds, SymbolTabl
 
 std::vector<std::string> hack::assembler::Translate(const std::vector<Command>& cmds, Diag& diag)
 {
+	diag.SetErrorFatal(false, "Code generation");
 	auto syms = FirstPass(cmds, diag);
 	return SecondPass(cmds, syms, diag);
 }

@@ -3,26 +3,40 @@
 
 using namespace hack;
 
+Diag::Proxy::~Proxy()
+{
+	// Do not call the potentially throwing Emit()
+	// when the destructor is called during stack
+	// unwinding.
+	if (!std::uncaught_exception())
+		Emit();
+}
+
 void Diag::Proxy::Emit()
 {
 	if (alive) {
 		client.Print(id, pos, args);
 		alive = false;
 
+		// This is save, even though the exception gets thrown
+		// in the destructor of Diag::Proxy, as Emit() is not 
+		// called, when the object gets destructed during stack
+		// unwinding.
 		if (kill)
-			throw std::runtime_error("Fatal error");
+			throw FatalError(state);
 	}
 }
 
-void Diag::SetErrorFatal(bool fatal)
+void Diag::SetErrorFatal(bool fatal, const std::string& where)
 {
 	errFatal = fatal;
+	state = where;
 }
 
 Diag::Proxy Diag::Error(const CodePosition& pos, size_t id)
 {
 	nErrors++;
-	return Proxy(id, client, pos, errFatal);
+	return Proxy(id, client, pos, errFatal, state);
 }
 
 Diag::Proxy Diag::Error(size_t id)
@@ -34,7 +48,7 @@ Diag::Proxy Diag::Error(size_t id)
 Diag::Proxy Diag::Warning(const CodePosition& pos, size_t id)
 {
 	nWarnings++;
-	return Proxy(id, client, pos, false);
+	return Proxy(id, client, pos, false, state);
 }
 
 Diag::Proxy Diag::Warning(size_t id)
@@ -54,6 +68,8 @@ void DiagClient::Print(size_t id, const CodePosition& pos, const std::vector<std
 {
 	size_t num;
 	auto msg = GetMessages(num);
+	if (!msg)
+		num = 0;
 
 	for (size_t i=0; i < num; ++i) {
 		if (msg[i].id != id)
@@ -62,7 +78,7 @@ void DiagClient::Print(size_t id, const CodePosition& pos, const std::vector<std
 		assert(args.size() >= msg[i].nargs);
 
 		boost::format fmt(msg[i].fmt);
-		for (size_t a=0; a < msg[i].nargs; ++a) {
+		for (size_t a=0; a < std::min(msg[i].nargs, args.size()); ++a) {
 			fmt % args[a];
 		}
 

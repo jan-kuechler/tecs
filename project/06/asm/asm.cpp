@@ -69,13 +69,21 @@ int main(int argc, char* argv[])
 
 		auto txt = Translate(p.GetCommands(), diag);
 
-		std::ofstream out(outf);
-		std::for_each(txt.begin(), txt.end(), [&out](const std::string& line) {
-			out << line << "\n";
-		});
+		auto nerr = diag.GetNumErrors();
+		if (nerr) {
+			std::cerr << nerr << (nerr == 1 ? " error" : " errors") << ", terminating.\n";
+			return nerr;
+		}
+		else {
+			std::ofstream out(outf);
+			std::for_each(txt.begin(), txt.end(), [&out](const std::string& line) {
+				out << line << "\n";
+			});
+		}
 	}
 	catch (std::exception& ex) {
 		std::cout << ex.what() << std::endl;
+		return 1;
 	}
 
 	return 0;
