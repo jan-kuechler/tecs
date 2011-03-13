@@ -28,8 +28,10 @@ namespace diag {
 
 class AsmDiagClient : public hack::DiagClient
 {
-public:
-	void Print(size_t id, const CodePosition& pos, const std::vector<std::string>& args);
+protected:
+	static Message messages[];
+
+	Message *GetMessages(size_t &num) const;
 };
 
 }; };

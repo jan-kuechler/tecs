@@ -12,10 +12,19 @@ struct CodePosition
 class DiagClient
 {
 public:
-	virtual void Print(size_t id, const CodePosition& pos, const std::vector<std::string>& args) = 0;
+	struct Message
+	{
+		size_t id;
+		const char *fmt;
+		size_t nargs;
+	};
+
+	virtual void Print(size_t id, const CodePosition& pos, const std::vector<std::string>& args);
 
 protected:
 	void PrintPosition(std::ostream& out, const CodePosition& pos);
+
+	virtual Message* GetMessages(size_t &num) const = 0;
 };
 
 class Diag

@@ -49,3 +49,27 @@ void DiagClient::PrintPosition(std::ostream& out, const CodePosition& pos)
 		return;
 	out << pos.file << ":" << pos.line << " - ";
 }
+
+void DiagClient::Print(size_t id, const CodePosition& pos, const std::vector<std::string>& args)
+{
+	size_t num;
+	auto msg = GetMessages(num);
+
+	for (size_t i=0; i < num; ++i) {
+		if (msg[i].id != id)
+			continue;
+
+		assert(args.size() >= msg[i].nargs);
+
+		boost::format fmt(msg[i].fmt);
+		for (size_t a=0; a < msg[i].nargs; ++a) {
+			fmt % args[a];
+		}
+
+		PrintPosition(std::cerr, pos);
+		std::cerr << fmt.str() << std::endl;
+
+		return;
+	}
+	throw std::runtime_error("Unknown diag code");
+}
