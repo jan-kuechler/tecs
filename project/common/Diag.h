@@ -7,6 +7,13 @@ struct CodePosition
 {
 	std::string file;
 	size_t line;
+
+	CodePosition()
+	{ }
+
+	CodePosition(const std::string& f, size_t l)
+	: file(f), line(l)
+	{ }
 };
 
 class DiagClient
@@ -64,13 +71,12 @@ public:
 
 		Proxy(size_t id, DiagClient& client, const CodePosition& pos, bool kill, const std::string& st)
 		: alive(true), id(id), pos(pos), client(client), kill(kill), state(st)
-		{
-		}
+		{	}
 
 	public:
 		Proxy(const Proxy& p)
 		: alive(true), args(p.args), id(p.id), pos(p.pos), client(p.client), kill(p.kill), state(p.state)
-		{ 
+		{
 			p.alive = false;
 		}
 
@@ -90,7 +96,7 @@ public:
 	: client(client), nErrors(0), nWarnings(0), errFatal(true)
 	{ }
 
-	void SetErrorFatal(bool fatal, const std::string& where = "" );
+	void SetErrorFatal(bool fatal, const std::string& where = "");
 
 	Proxy Error(const CodePosition& pos, size_t code);
 	Proxy Error(size_t code);
