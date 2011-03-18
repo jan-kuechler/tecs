@@ -97,14 +97,14 @@ Command Parser::ParseLine(std::string line, size_t ln) const
 	}
 
 	if (nargs == 0) {
-		return Command(ctp);
+		return Command(ctp, parts[0]);
 	}
 	else if (nargs == 1) {
-		return Command(ctp, parts[1]);
+		return Command(ctp, parts[0], parts[1]);
 	}
 	else if (nargs == 2) {
 		try {
-			return Command(ctp, parts[1], boost::lexical_cast<int>(parts[2]));
+			return Command(ctp, parts[0], parts[1], boost::lexical_cast<int>(parts[2]));
 		}
 		catch (boost::bad_lexical_cast) {
 			diag.Error(CodePosition(fileName, ln), diag::err_no_number) << parts[2];

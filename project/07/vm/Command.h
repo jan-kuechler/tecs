@@ -20,6 +20,7 @@ public:
 private:
 	Type type;
 
+	std::string cmd;
 	std::string strArg;
 	int         intArg;
 
@@ -28,17 +29,36 @@ public:
 	: type(tp)
 	{ }
 
-	Command(Type tp, const std::string& sa)
-	: type(tp), strArg(sa)
+	Command(Type tp, const std::string& cmd)
+	: type(tp), cmd(cmd)
 	{ }
 
-	Command(Type tp, const std::string& sa, int ia)
-	: type(tp), strArg(sa), intArg(ia)
+	Command(Type tp, const std::string& cmd, const std::string& sa)
+	: type(tp), cmd(cmd), strArg(sa)
+	{ }
+
+	Command(Type tp, const std::string& cmd, const std::string& sa, int ia)
+	: type(tp), cmd(cmd), strArg(sa), intArg(ia)
 	{ }
 
 	Type GetType() const
 	{
 		return type;
+	}
+
+	std::string GetCmd() const
+	{
+		return cmd;
+	}
+
+	std::string GetStringArg() const
+	{
+		return strArg;
+	}
+
+	int GetIntArg() const
+	{
+		return intArg;
 	}
 
 	static size_t GetNumArgs(Type tp)

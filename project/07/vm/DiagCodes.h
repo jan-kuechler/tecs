@@ -12,6 +12,10 @@ namespace diag {
 		err_too_many_args,
 		err_no_number,
 
+		err_unk_segment,
+
+		err_not_impl,
+
 		NUM_DIAG_CODES,
 	};
 };

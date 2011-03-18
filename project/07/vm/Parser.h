@@ -21,7 +21,10 @@ public:
 
 	void Parse();
 
-	std::vector<Command> GetCommands() const;
+	std::vector<Command> GetCommands() const
+	{
+		return cmds;
+	}
 
 private:
 	static std::map<std::string, Command::Type> typeMap;
