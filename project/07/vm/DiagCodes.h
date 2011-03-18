@@ -13,8 +13,10 @@ namespace diag {
 		err_no_number,
 
 		err_unk_segment,
+		err_pop_const,
 
 		err_not_impl,
+
 
 		NUM_DIAG_CODES,
 	};

@@ -6,6 +6,10 @@ using namespace hack::vm;
 static const char *TRUE = "-1";
 static const char *FALSE = "0";
 
+static const char *TMP[3] = {
+	"R13", "R14", "R15",
+};
+
 /*static*/ std::map<std::string, CodeGen::Segment> CodeGen::segmentMap;
 
 CodeGen::CodeGen(std::ofstream& out, hack::Diag& diag)
@@ -57,6 +61,8 @@ void CodeGen::WriteCmd(const Command& cmd)
 		WriteBinaryArith(cmd);
 	else if (cmd.GetType() == Command::Push)
 		WritePush(cmd);
+	else if (cmd.GetType() == Command::Pop)
+		WritePop(cmd);
 }
 
 void CodeGen::WriteUnaryArith(const Command& cmd)
@@ -157,20 +163,49 @@ void CodeGen::WritePush(const Command& cmd)
 
 void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
 {
+	bool direct = (seg == SEG_PTR || seg == SEG_TMP);
+
 	out << "@" << boost::lexical_cast<std::string>(idx) << "\n"
-	       "D=A   \n"
-	       "@" << GetAddrForSegment(seg) << "\n"
-	       "A=M   \n"
-	       "A=A+D \n";
+	       "D=A\n"
+	       "@" << GetAddrForSegment(seg) << "\n";
+	if (direct)
+		out << "A=A+D\n";
+	else
+	    out << "A=M+D\n";
 }
 
 void CodeGen::WritePop(const Command& cmd)
 {
+	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << " " << cmd.GetIntArg() << "\n";
+
+	Segment seg = GetSegment(cmd.GetStringArg());
+	if (seg == NO_SEGMENT)
+		return;
+
+	if (seg == SEG_CONST) {
+		diag.Error(diag::err_pop_const);
+	}
+	else if (seg == SEG_STATIC) {
+		diag.Error(diag::err_not_impl) << "'static' segment is not implemented";
+		return;
+	}
+	else {
+		LoadSegIdxAddr(seg, cmd.GetIntArg());
+		// store address for later use
+		out << "D=A\n"
+		       "@" << TMP[0] << "\n"
+		       "M=D\n";
+		TopToD();
+		out << "@" << TMP[0] << "\n"
+		       "A=M\n"
+		       "M=D\n";
+		DecSP();
+	}
 }
 
 std::string CodeGen::LocalSymbol(const std::string& hint /*= ""*/)
 {
-	return "$tmp:" + (hint.empty() ? std::string() :  hint + ":") + boost::lexical_cast<std::string>(lclSym++);
+	return "$tmp:"  + boost::lexical_cast<std::string>(lclSym++) + (hint.empty() ? std::string() : ":" + hint);
 }
 
 static bool IsReg(char reg)
@@ -182,31 +217,31 @@ static bool IsReg(char reg)
 void CodeGen::LoadArg2To(char reg)
 {
 	assert(IsReg(reg));
-	out << "@2    \n"
-	       "D=A   \n"
-	       "@SP   \n"
-	       "A=M-D \n"
+	out << "@2\n"
+	       "D=A\n"
+	       "@SP\n"
+	       "A=M-D\n"
 	    << reg
-	    << "=M   \n";
+	    << "=M\n";
 }
 
 /* Modifies: A, reg */
 void CodeGen::LoadArg1To(char reg)
 {
 	assert(IsReg(reg));
-	out << "@SP   \n"
-	       "A=M-1 \n"
+	out << "@SP\n"
+	       "A=M-1\n"
 	    << reg
-	    << "=M   \n";
+	    << "=M\n";
 }
 
 /* Modifies: A */
 void CodeGen::StoreDAtArg2()
 {
-	out << "@SP   \n"
-	       "A=M-1 \n"
-	       "A=A-1 \n"
-	       "M=D   \n";
+	out << "@SP\n"
+	       "A=M-1\n"
+	       "A=A-1\n"
+	       "M=D\n";
 }
 
 void CodeGen::StoreD()
@@ -216,26 +251,33 @@ void CodeGen::StoreD()
 
 void CodeGen::PushD()
 {
-	out << "@SP   \n"
-	       "A=M   \n"
-	       "M=D   \n";
+	out << "@SP\n"
+	       "A=M\n"
+	       "M=D\n";
 	IncSP();
+}
+
+void CodeGen::TopToD()
+{
+	out << "@SP\n"
+	       "A=M-1\n"
+	       "D=M\n";
 }
 
 /* Modifies: A, D */
 void CodeGen::IncSP()
 {
-	out << "@SP   \n"
-	       "D=M+1 \n"
-	       "M=D   \n";
+	out << "@SP\n"
+	       "D=M+1\n"
+	       "M=D\n";
 }
 
 /* Modifies: A, D */
 void CodeGen::DecSP()
 {
-	out << "@SP   \n"
-	       "D=M-1 \n"
-	       "M=D   \n";
+	out << "@SP\n"
+	       "D=M-1\n"
+	       "M=D\n";
 }
 
 std::string CodeGen::GetAddrForSegment(Segment seg) const

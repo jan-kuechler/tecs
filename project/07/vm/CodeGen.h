@@ -53,11 +53,13 @@ private:
 	void LoadArg2To(char reg);
 	void LoadArg1To(char reg);
 	void StoreDAtArg2();
+
 	void StoreD();
 
 	void LoadSegIdxAddr(Segment seg, int idx);
 
 	void PushD();
+	void TopToD();
 
 	void TrueToA();
 	void FalseToA();
