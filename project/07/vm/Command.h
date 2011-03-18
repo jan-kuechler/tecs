@@ -1,6 +1,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include "Diag.h"
+
 namespace hack { namespace vm {
 
 class Command
@@ -24,21 +26,23 @@ private:
 	std::string strArg;
 	int         intArg;
 
+	hack::CodePosition pos;
+
 public:
 	Command(Type tp)
 	: type(tp)
 	{ }
 
-	Command(Type tp, const std::string& cmd)
-	: type(tp), cmd(cmd)
+	Command(Type tp, const hack::CodePosition& pos, const std::string& cmd)
+	: type(tp), cmd(cmd), pos(pos)
 	{ }
 
-	Command(Type tp, const std::string& cmd, const std::string& sa)
-	: type(tp), cmd(cmd), strArg(sa)
+	Command(Type tp, const hack::CodePosition& pos, const std::string& cmd, const std::string& sa)
+	: type(tp), cmd(cmd), strArg(sa), pos(pos)
 	{ }
 
-	Command(Type tp, const std::string& cmd, const std::string& sa, int ia)
-	: type(tp), cmd(cmd), strArg(sa), intArg(ia)
+	Command(Type tp, const hack::CodePosition& pos, const std::string& cmd, const std::string& sa, int ia)
+	: type(tp), cmd(cmd), strArg(sa), intArg(ia), pos(pos)
 	{ }
 
 	Type GetType() const
@@ -59,6 +63,11 @@ public:
 	int GetIntArg() const
 	{
 		return intArg;
+	}
+
+	hack::CodePosition GetPos() const
+	{
+		return pos;
 	}
 
 	static size_t GetNumArgs(Type tp)

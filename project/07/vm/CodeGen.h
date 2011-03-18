@@ -43,7 +43,7 @@ private:
 	void WritePush(const Command& cmd);
 	void WritePop(const Command& cmd);
 
-	Segment GetSegment(const std::string& str) const;
+	Segment GetSegment(const hack::CodePosition& pos, const std::string& str) const;
 	std::string GetAddrForSegment(Segment seg) const;
 
 	std::string LocalSymbol(const std::string& hint = "");

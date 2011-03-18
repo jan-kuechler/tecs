@@ -15,6 +15,8 @@ namespace diag {
 		err_unk_segment,
 		err_pop_const,
 
+		wrn_const,
+
 		err_not_impl,
 
 

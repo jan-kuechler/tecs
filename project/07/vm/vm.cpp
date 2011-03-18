@@ -13,18 +13,23 @@ namespace fs = boost::filesystem;
 #define PROG_NAME "hack-vm"
 #define PROG_VERSION "0.1"
 
-void parse_file(const fs::path& path, hack::vm::CodeGen& codeGen, hack::Diag& diag)
+bool parse_file(const fs::path& path, hack::vm::CodeGen& codeGen, hack::Diag& diag)
 {
 	hack::vm::Parser p(path, diag);
 	p.Parse();
+	if (diag.GetNumErrors() > 0)
+		return false;
+
 	codeGen.Generate(path.string(), p.GetCommands());
+	return diag.GetNumErrors() == 0;
 }
 
 void parse_directory(const fs::path& path, hack::vm::CodeGen& codeGen, hack::Diag& diag)
 {
 	for (fs::directory_iterator f(path), end; f != end; ++f) {
 		if (fs::is_regular_file(*f) && f->path().extension() == ".vm")
-			parse_file(f->path(), codeGen, diag);
+			if (!parse_file(f->path(), codeGen, diag))
+				return;
 	}
 }
 
@@ -88,6 +93,11 @@ int main(int argc, char **argv)
 				parse_directory(*it, codeGen, diag);
 			else
 				parse_file(*it, codeGen, diag);
+
+			if (diag.GetNumErrors() > 0) {
+				std::cerr << "Too many errors, terminating\n";
+				return 1;
+			}
 		}
 	}
 	catch (std::exception& ex) {

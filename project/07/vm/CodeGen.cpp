@@ -21,6 +21,8 @@ CodeGen::CodeGen(std::ofstream& out, hack::Diag& diag)
 
 void CodeGen::Generate(const std::string& fileName, const std::vector<Command>& cmds)
 {
+	diag.SetErrorFatal(false, "Code generation");
+
 	curFile = fileName;
 	fileId = fs::path(fileName).stem();
 
@@ -65,6 +67,8 @@ void CodeGen::WriteCmd(const Command& cmd)
 		WritePush(cmd);
 	else if (cmd.GetType() == Command::Pop)
 		WritePop(cmd);
+	else
+		diag.Error(cmd.GetPos(), diag::err_not_impl) << cmd.GetCmd();
 }
 
 void CodeGen::WriteUnaryArith(const Command& cmd)
@@ -124,11 +128,11 @@ void CodeGen::WriteBinaryArith(const Command& cmd)
 				out << "D;JGT\n";
 
 			out << "D=" << FALSE << "\n"
-				   "@" << symCont << "\n"
-				   "0;JMP\n"
-				   "(" << symIs << ")\n"
-				   "D=" << TRUE << "\n"
-				   "(" << symCont << ")\n";
+			       "@" << symCont << "\n"
+			       "0;JMP\n"
+			       "(" << symIs << ")\n"
+			       "D=" << TRUE << "\n"
+			       "(" << symCont << ")\n";
 		}
 		break;
 
@@ -143,11 +147,15 @@ void CodeGen::WriteBinaryArith(const Command& cmd)
 void CodeGen::WritePush(const Command& cmd)
 {
 	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << " " << cmd.GetIntArg() << "\n";
-	Segment seg = GetSegment(cmd.GetStringArg());
+	Segment seg = GetSegment(cmd.GetPos(), cmd.GetStringArg());
 	if (seg == NO_SEGMENT)
 		return;
 
 	if (seg == SEG_CONST) {
+		if (cmd.GetIntArg() > ((~0) & 0x7FFF)) {
+			diag.Warning(cmd.GetPos(), diag::wrn_const) << (cmd.GetIntArg() & 0x7FFF);
+		}
+
 		out << "@" << boost::lexical_cast<std::string>(cmd.GetIntArg()) << "\n"
 			<< "D=A \n";
 		PushD();
@@ -164,29 +172,16 @@ void CodeGen::WritePush(const Command& cmd)
 	}
 }
 
-void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
-{
-	bool direct = (seg == SEG_PTR || seg == SEG_TMP);
-
-	out << "@" << boost::lexical_cast<std::string>(idx) << "\n"
-	       "D=A\n"
-	       "@" << GetAddrForSegment(seg) << "\n";
-	if (direct)
-		out << "A=A+D\n";
-	else
-	    out << "A=M+D\n";
-}
-
 void CodeGen::WritePop(const Command& cmd)
 {
 	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << " " << cmd.GetIntArg() << "\n";
 
-	Segment seg = GetSegment(cmd.GetStringArg());
+	Segment seg = GetSegment(cmd.GetPos(), cmd.GetStringArg());
 	if (seg == NO_SEGMENT)
 		return;
 
 	if (seg == SEG_CONST) {
-		diag.Error(diag::err_pop_const);
+		diag.Error(cmd.GetPos(), diag::err_pop_const);
 	}
 	else if (seg == SEG_STATIC) {
 		TopToD();
@@ -208,9 +203,22 @@ void CodeGen::WritePop(const Command& cmd)
 	}
 }
 
+void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
+{
+	bool direct = (seg == SEG_PTR || seg == SEG_TMP);
+
+	out << "@" << boost::lexical_cast<std::string>(idx) << "\n"
+	       "D=A\n"
+	       "@" << GetAddrForSegment(seg) << "\n";
+	if (direct)
+		out << "A=A+D\n";
+	else
+	    out << "A=M+D\n";
+}
+
 std::string CodeGen::LocalSymbol(const std::string& hint /*= ""*/)
 {
-	return "$tmp:"  + boost::lexical_cast<std::string>(lclSym++) + (hint.empty() ? std::string() : ":" + hint);
+	return "$lcl:"  + boost::lexical_cast<std::string>(lclSym++) + (hint.empty() ? std::string() : ":" + hint);
 }
 
 static bool IsReg(char reg)
@@ -306,10 +314,10 @@ std::string CodeGen::GetAddrForSegment(Segment seg) const
 	}
 }
 
-CodeGen::Segment CodeGen::GetSegment(const std::string& str) const
+CodeGen::Segment CodeGen::GetSegment(const hack::CodePosition& pos, const std::string& str) const
 {
 	if (segmentMap.find(str) == segmentMap.end()) {
-		diag.Error(diag::err_unk_segment) << str;
+		diag.Error(pos, diag::err_unk_segment) << str;
 		return NO_SEGMENT;
 	}
 	return segmentMap[str];

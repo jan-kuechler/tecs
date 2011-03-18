@@ -31,7 +31,7 @@ Parser::Parser(const std::string& input, const std::string& fileName, hack::Diag
 
 void Parser::Parse()
 {
-	diag.SetErrorFatal(false, "Parser");
+	diag.SetErrorFatal(false, "Parsing");
 
 	std::stringstream str(input);
 	std::string line;
@@ -64,7 +64,12 @@ std::vector<std::string> Parser::SplitAndRemoveComments(const std::string& line)
 		}
 	}
 
-	return std::vector<std::string>(parts.begin(), parts.begin() + end);
+	std::vector<std::string> res(parts.begin(), parts.begin() + end);
+
+	if (res.size() > 0 && (res.end()-1)->empty())
+		res.erase(res.end() - 1);
+
+	return res;
 }
 
 Command Parser::ParseLine(std::string line, size_t ln) const
@@ -80,34 +85,34 @@ Command Parser::ParseLine(std::string line, size_t ln) const
 		return Command::NONE;
 
 	if (typeMap.find(parts[0]) == typeMap.end()) {
-		diag.Error(CodePosition(fileName, ln), diag::err_unk_cmd) << parts[0];
+		diag.Error(Position(ln), diag::err_unk_cmd) << parts[0];
 		return Command::NONE;
 	}
 
 	Command::Type ctp = typeMap[parts[0]];
 	size_t nargs = Command::GetNumArgs(ctp);
 
-	if (nargs < (parts.size()-1)) {
-		diag.Error(CodePosition(fileName, ln), diag::err_not_enough_args) << parts[0] << nargs << parts.size()-1;
+	if (nargs > (parts.size()-1)) {
+		diag.Error(Position(ln), diag::err_not_enough_args) << parts[0] << nargs << parts.size()-1;
 		return Command::NONE;
 	}
-	else if (nargs > (parts.size()-1)) {
-		diag.Error(CodePosition(fileName, ln), diag::err_too_many_args) << parts[0] << nargs << parts.size()-1;
+	else if (nargs < (parts.size()-1)) {
+		diag.Error(Position(ln), diag::err_too_many_args) << parts[0] << nargs << parts.size()-1;
 		return Command::NONE;
 	}
 
 	if (nargs == 0) {
-		return Command(ctp, parts[0]);
+		return Command(ctp, Position(ln), parts[0]);
 	}
 	else if (nargs == 1) {
-		return Command(ctp, parts[0], parts[1]);
+		return Command(ctp, Position(ln), parts[0], parts[1]);
 	}
 	else if (nargs == 2) {
 		try {
-			return Command(ctp, parts[0], parts[1], boost::lexical_cast<int>(parts[2]));
+			return Command(ctp, Position(ln), parts[0], parts[1], boost::lexical_cast<int>(parts[2]));
 		}
 		catch (boost::bad_lexical_cast) {
-			diag.Error(CodePosition(fileName, ln), diag::err_no_number) << parts[2];
+			diag.Error(Position(ln), diag::err_no_number) << parts[2];
 		}
 	}
 	return Command::NONE;

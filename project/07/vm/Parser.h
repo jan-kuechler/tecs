@@ -32,6 +32,11 @@ private:
 
 	Command ParseLine(std::string line, size_t ln) const;
 	std::vector<std::string> SplitAndRemoveComments(const std::string& line) const;
+
+	CodePosition Position(size_t ln) const
+	{
+		return CodePosition(fileName, ln);
+	}
 };
 
 }; };
