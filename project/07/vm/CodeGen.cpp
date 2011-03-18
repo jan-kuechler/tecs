@@ -2,6 +2,7 @@
 #include "CodeGen.h"
 
 using namespace hack::vm;
+namespace fs = boost::filesystem;
 
 static const char *TRUE = "-1";
 static const char *FALSE = "0";
@@ -21,6 +22,7 @@ CodeGen::CodeGen(std::ofstream& out, hack::Diag& diag)
 void CodeGen::Generate(const std::string& fileName, const std::vector<Command>& cmds)
 {
 	curFile = fileName;
+	fileId = fs::path(fileName).stem();
 
 	for (auto c = cmds.begin(); c != cmds.end(); ++c)
 		WriteCmd(*c);
@@ -151,8 +153,9 @@ void CodeGen::WritePush(const Command& cmd)
 		PushD();
 	}
 	else if (seg == SEG_STATIC) {
-		diag.Error(diag::err_not_impl) << "'static' segment is not implemented";
-		return;
+		out << "@" << fileId << "." << cmd.GetIntArg() << "\n"
+		       "D=M\n";
+		PushD();
 	}
 	else {
 		LoadSegIdxAddr(seg, cmd.GetIntArg());
@@ -186,8 +189,10 @@ void CodeGen::WritePop(const Command& cmd)
 		diag.Error(diag::err_pop_const);
 	}
 	else if (seg == SEG_STATIC) {
-		diag.Error(diag::err_not_impl) << "'static' segment is not implemented";
-		return;
+		TopToD();
+		out << "@" << fileId << "." << cmd.GetIntArg() << "\n"
+		       "M=D\n";
+		DecSP();
 	}
 	else {
 		LoadSegIdxAddr(seg, cmd.GetIntArg());

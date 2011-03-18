@@ -11,7 +11,7 @@ class CodeGen
 	hack::Diag& diag;
 	std::ofstream& out;
 
-	std::string curFile;
+	std::string curFile, fileId;
 
 	int lclSym;
 
