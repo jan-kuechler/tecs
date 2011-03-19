@@ -75,6 +75,15 @@ void CodeGen::WriteCmd(const Command& cmd)
 	case Command::If:
 		WriteIf(cmd);
 		break;
+	case Command::Function:
+		WriteFunction(cmd);
+		break;
+	case Command::Call:
+		WriteCall(cmd);
+		break;
+	case Command::Return:
+		WriteReturn(cmd);
+		break;
 			
 	default:
 		if (IsUnaryArithCmd(cmd))
@@ -249,6 +258,79 @@ void CodeGen::WriteIf(const Command& cmd)
 	out << "D;JNE\n";
 }
 
+void CodeGen::WriteFunction(const Command& cmd)
+{
+	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << " " << cmd.GetIntArg() << "\n";
+	out << "(" << cmd.GetStringArg() << ")\n";
+	Push0(cmd.GetIntArg());
+}
+
+void CodeGen::WriteCall(const Command& cmd)
+{
+	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << "\n";
+
+	std::string retAddr = LocalSymbol("ret_from_" + cmd.GetStringArg());
+	PushSym(retAddr);
+	PushVal("LCL");
+	PushVal("ARG");
+	PushVal("THIS");
+	PushVal("THAT");
+
+	// ARG = SP - n - 5
+	out << "@" << cmd.GetIntArg() + 5 << "\n"
+	       "D=A\n"
+	       "@SP\n"
+	       "D=M-D\n"
+	       "@ARG\n"
+	       "M=D\n";
+	out << "@SP\n"
+	       "D=M\n"
+	       "@ARG\n"
+	       "M=D\n";
+	out << "@" << cmd.GetStringArg() << "\n"
+	       "0;JMP\n";
+	out << "(" << retAddr << ")\n";
+}
+
+void CodeGen::WriteReturn(const Command& cmd)
+{
+	out << "// " << cmd.GetCmd() << "\n";
+
+	// Temporary variables:
+	//  0: FRAME
+	//  1: RET
+
+	// FRAME = LCL
+	out << "@LCL\n"
+	       "D=A\n"
+	       "@" << TMP[0] << "\n"
+	       "M=D\n";
+
+	// RET = *(FRAME - 5)
+	Assign(TMP[1], TMP[0], 5);
+
+	// Move return value
+	PopD();
+	out << "@ARG\n"
+	       "A=M\n"
+	       "M=D\n";
+
+	// Reposition SP
+	out << "@ARG\n"
+	       "D=M+1\n"
+	       "@SP\n"
+	       "M=D\n";
+
+	Assign("THAT", TMP[0], 1);
+	Assign("THIS", TMP[0], 2);
+	Assign("ARG", TMP[0], 3);
+	Assign("LCL", TMP[0], 4);
+
+	out << "@" << TMP[1] << "\n"
+	       "A=M;JMP\n";
+
+}
+
 void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
 {
 	bool direct = (seg == SEG_PTR || seg == SEG_TMP);
@@ -260,6 +342,17 @@ void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
 		out << "A=A+D\n";
 	else
 	    out << "A=M+D\n";
+}
+
+void CodeGen::Assign(const std::string& dst, const std::string src, int noffs)
+{
+	out << "@" << src << "\n"
+	       "D=A\n"
+	       "@" << noffs << "\n"
+	       "A=D-A\n"
+	       "D=M\n"
+	       "@" << dst << "\n"
+	       "M=D\n";
 }
 
 std::string CodeGen::LocalSymbol(const std::string& hint /*= ""*/)
@@ -316,6 +409,20 @@ void CodeGen::PushD()
 	IncSP();
 }
 
+void CodeGen::PushSym(const std::string& sym)
+{
+	out << "@" << sym << "\n"
+	       "D=A";
+	PushD();
+}
+
+void CodeGen::PushVal(const std::string& sym)
+{
+	out << "@" << sym << "\n"
+	       "D=M";
+	PushD();
+}
+
 void CodeGen::TopToD()
 {
 	out << "@SP\n"
@@ -327,6 +434,24 @@ void CodeGen::PopD()
 {
 	TopToD();
 	DecSP();
+}
+
+void CodeGen::Push0(int n)
+{
+	if (n <= 0)
+		return;
+
+	out << "@SP\n"
+	       "A=M\n"
+	       "M=0\n";
+	for (int i=1; i < n; ++i) {
+		out << "A=A+1\n"
+		       "M=0\n";
+	}
+	out << "@" << boost::lexical_cast<std::string>(n) << "\n"
+	       "D=A\n"
+	       "@SP\n"
+	       "M=M+D\n";
 }
 
 /* Modifies: A */

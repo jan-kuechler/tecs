@@ -47,6 +47,9 @@ private:
 	void WriteLabel(const Command& cmd);
 	void WriteGoto(const Command& cmd);
 	void WriteIf(const Command& cmd);
+	void WriteFunction(const Command& cmd);
+	void WriteCall(const Command& cmd);
+	void WriteReturn(const Command& cmd);
 
 	Segment GetSegment(const hack::CodePosition& pos, const std::string& str) const;
 	std::string GetAddrForSegment(Segment seg) const;
@@ -63,9 +66,15 @@ private:
 
 	void LoadSegIdxAddr(Segment seg, int idx);
 
+	void Assign(const std::string& dst, const std::string src, int noffs);
+
 	void PushD();
 	void TopToD();
 	void PopD();
+
+	void Push0(int n);
+	void PushSym(const std::string& sym);
+	void PushVal(const std::string& sym);
 
 	void TrueToA();
 	void FalseToA();
