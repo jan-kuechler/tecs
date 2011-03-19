@@ -19,6 +19,16 @@ CodeGen::CodeGen(std::ofstream& out, hack::Diag& diag)
 	InitSegmentMap();
 }
 
+void CodeGen::WriteStartup()
+{
+	// SP=256
+	out << "@256\n"
+	       "D=A\n"
+	       "@SP\n"
+	       "M=D\n";
+	WriteCall(Command(Command::Call, CodePosition("$startup$", 0), "call", "Sys.init", 0));
+}
+
 void CodeGen::Generate(const std::string& fileName, const std::vector<Command>& cmds)
 {
 	diag.SetErrorFatal(false, "Code generation");
@@ -285,7 +295,7 @@ void CodeGen::WriteCall(const Command& cmd)
 	       "M=D\n";
 	out << "@SP\n"
 	       "D=M\n"
-	       "@ARG\n"
+	       "@LCL\n"
 	       "M=D\n";
 	out << "@" << cmd.GetStringArg() << "\n"
 	       "0;JMP\n";
@@ -412,14 +422,14 @@ void CodeGen::PushD()
 void CodeGen::PushSym(const std::string& sym)
 {
 	out << "@" << sym << "\n"
-	       "D=A";
+	       "D=A\n";
 	PushD();
 }
 
 void CodeGen::PushVal(const std::string& sym)
 {
 	out << "@" << sym << "\n"
-	       "D=M";
+	       "D=M\n";
 	PushD();
 }
 

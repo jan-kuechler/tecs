@@ -35,6 +35,7 @@ class CodeGen
 public:
 	CodeGen(std::ofstream& out, hack::Diag& diag);
 
+	void WriteStartup();
 	void Generate(const std::string& fileName, const std::vector<Command>& cmds);
 
 private:

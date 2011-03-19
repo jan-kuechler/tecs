@@ -88,6 +88,8 @@ int main(int argc, char **argv)
 		std::ofstream out(outf);
 		hack::vm::CodeGen codeGen(out, diag);
 
+		codeGen.WriteStartup();
+
 		for (auto it = inf.begin(); it != inf.end(); ++it) {
 			if (fs::is_directory(*it))
 				parse_directory(*it, codeGen, diag);
