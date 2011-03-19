@@ -44,6 +44,12 @@ int main(int argc, char **argv)
 		("help,h", "Print help and exit")
 		(",o", po::value<std::string>(&outf)->default_value("*"), "Output file");
 
+	po::options_description optSys;
+	optSys.add_options()
+		("entry", po::value<std::string>()->default_value("Sys.init"), "Program entry")
+		("stack", po::value<int>()->default_value(256), "Stack position")
+		("omit-startup", "Omit startup code");
+
 	po::options_description optHidden;
 	optHidden.add_options()
 		("infile", po::value<std::vector<std::string>>(&inf), "Input file(s)");
@@ -52,7 +58,7 @@ int main(int argc, char **argv)
 	optPos.add("infile", -1);
 
 	po::options_description optAll;
-	optAll.add(optDesc).add(optHidden);
+	optAll.add(optDesc).add(optSys).add(optHidden);
 
 	po::variables_map opt;
 	po::store(po::command_line_parser(argc, argv).options(optAll).positional(optPos).run(), opt);
@@ -61,6 +67,7 @@ int main(int argc, char **argv)
 	if (opt.count("help")) {
 		std::cout << argv[0] << " [options] <infile>\n";
 		std::cout << optDesc << "\n";
+		std::cout << optSys << "\n";
 		return 0;
 	}
 	if (opt.count("version")) {
@@ -88,7 +95,8 @@ int main(int argc, char **argv)
 		std::ofstream out(outf);
 		hack::vm::CodeGen codeGen(out, diag);
 
-		codeGen.WriteStartup();
+		if (opt.count("omit-startup") == 0)
+			codeGen.WriteStartup(opt["stack"].as<int>(), opt["entry"].as<std::string>());
 
 		for (auto it = inf.begin(); it != inf.end(); ++it) {
 			if (fs::is_directory(*it))

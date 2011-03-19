@@ -19,14 +19,14 @@ CodeGen::CodeGen(std::ofstream& out, hack::Diag& diag)
 	InitSegmentMap();
 }
 
-void CodeGen::WriteStartup()
+void CodeGen::WriteStartup(int stack, const std::string& entry)
 {
 	// SP=256
-	out << "@256\n"
+	out << "@" << boost::lexical_cast<std::string>(stack) << "\n"
 	       "D=A\n"
 	       "@SP\n"
 	       "M=D\n";
-	WriteCall(Command(Command::Call, CodePosition("$startup$", 0), "call", "Sys.init", 0));
+	WriteCall(Command(Command::Call, CodePosition("$startup$", 0), "call", entry, 0));
 }
 
 void CodeGen::Generate(const std::string& fileName, const std::vector<Command>& cmds)
@@ -35,6 +35,8 @@ void CodeGen::Generate(const std::string& fileName, const std::vector<Command>& 
 
 	curFile = fileName;
 	fileId = fs::path(fileName).stem();
+
+	curFunc = "";
 
 	for (auto c = cmds.begin(); c != cmds.end(); ++c)
 		WriteCmd(*c);
@@ -273,6 +275,8 @@ void CodeGen::WriteFunction(const Command& cmd)
 	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << " " << cmd.GetIntArg() << "\n";
 	out << "(" << cmd.GetStringArg() << ")\n";
 	Push0(cmd.GetIntArg());
+
+	curFunc = cmd.GetStringArg();
 }
 
 void CodeGen::WriteCall(const Command& cmd)
@@ -293,6 +297,7 @@ void CodeGen::WriteCall(const Command& cmd)
 	       "D=M-D\n"
 	       "@ARG\n"
 	       "M=D\n";
+	// LCL = SP
 	out << "@SP\n"
 	       "D=M\n"
 	       "@LCL\n"
