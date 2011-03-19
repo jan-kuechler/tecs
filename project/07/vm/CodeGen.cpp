@@ -59,16 +59,32 @@ static bool IsBinaryArithCmd(const Command& cmd)
 
 void CodeGen::WriteCmd(const Command& cmd)
 {
-	if (IsUnaryArithCmd(cmd))
-		WriteUnaryArith(cmd);
-	else if (IsBinaryArithCmd(cmd))
-		WriteBinaryArith(cmd);
-	else if (cmd.GetType() == Command::Push)
+	switch (cmd.GetType()) {
+	case Command::Push:
 		WritePush(cmd);
-	else if (cmd.GetType() == Command::Pop)
+		break;
+	case Command::Pop:
 		WritePop(cmd);
-	else
-		diag.Error(cmd.GetPos(), diag::err_not_impl) << cmd.GetCmd();
+		break;
+	case Command::Label:
+		WriteLabel(cmd);
+		break;
+	case Command::Goto:
+		WriteGoto(cmd);
+		break;
+	case Command::If:
+		WriteIf(cmd);
+		break;
+			
+	default:
+		if (IsUnaryArithCmd(cmd))
+			WriteUnaryArith(cmd);
+		else if (IsBinaryArithCmd(cmd))
+			WriteBinaryArith(cmd);
+		else
+			diag.Error(cmd.GetPos(), diag::err_not_impl) << cmd.GetCmd();
+	}
+
 }
 
 void CodeGen::WriteUnaryArith(const Command& cmd)
@@ -203,6 +219,36 @@ void CodeGen::WritePop(const Command& cmd)
 	}
 }
 
+void CodeGen::WriteLabel(const Command& cmd)
+{
+	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << "\n";
+	if (curFunc.empty())
+		out << "(" << cmd.GetStringArg() << ")\n";
+	else
+		out << "(" << curFunc << "$" << cmd.GetStringArg() << ")\n";
+}
+
+void CodeGen::WriteGoto(const Command& cmd)
+{
+	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << "\n";
+	if (curFunc.empty())
+		out << "@" << cmd.GetStringArg() << "\n";
+	else
+		out << "@" << curFunc << "$" << cmd.GetStringArg() << "\n";
+	out << "0;JMP\n";
+}
+
+void CodeGen::WriteIf(const Command& cmd)
+{
+	out << "// " << cmd.GetCmd() << " " << cmd.GetStringArg() << "\n";
+	PopD();
+	if (curFunc.empty())
+		out << "@" << cmd.GetStringArg() << "\n";
+	else
+		out << "@" << curFunc << "$" << cmd.GetStringArg() << "\n";
+	out << "D;JNE\n";
+}
+
 void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
 {
 	bool direct = (seg == SEG_PTR || seg == SEG_TMP);
@@ -277,20 +323,24 @@ void CodeGen::TopToD()
 	       "D=M\n";
 }
 
-/* Modifies: A, D */
+void CodeGen::PopD()
+{
+	TopToD();
+	DecSP();
+}
+
+/* Modifies: A */
 void CodeGen::IncSP()
 {
 	out << "@SP\n"
-	       "D=M+1\n"
-	       "M=D\n";
+	       "M=M+1\n";
 }
 
-/* Modifies: A, D */
+/* Modifies: A */
 void CodeGen::DecSP()
 {
 	out << "@SP\n"
-	       "D=M-1\n"
-	       "M=D\n";
+	       "M=M-1\n";
 }
 
 std::string CodeGen::GetAddrForSegment(Segment seg) const

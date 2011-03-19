@@ -13,6 +13,8 @@ class CodeGen
 
 	std::string curFile, fileId;
 
+	std::string curFunc;
+
 	int lclSym;
 
 	enum Segment
@@ -42,6 +44,9 @@ private:
 	void WriteBinaryArith(const Command& cmd);
 	void WritePush(const Command& cmd);
 	void WritePop(const Command& cmd);
+	void WriteLabel(const Command& cmd);
+	void WriteGoto(const Command& cmd);
+	void WriteIf(const Command& cmd);
 
 	Segment GetSegment(const hack::CodePosition& pos, const std::string& str) const;
 	std::string GetAddrForSegment(Segment seg) const;
@@ -60,6 +65,7 @@ private:
 
 	void PushD();
 	void TopToD();
+	void PopD();
 
 	void TrueToA();
 	void FalseToA();
