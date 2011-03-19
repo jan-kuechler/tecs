@@ -302,7 +302,7 @@ void CodeGen::WriteReturn(const Command& cmd)
 
 	// FRAME = LCL
 	out << "@LCL\n"
-	       "D=A\n"
+	       "D=M\n"
 	       "@" << TMP[0] << "\n"
 	       "M=D\n";
 
@@ -347,7 +347,7 @@ void CodeGen::LoadSegIdxAddr(Segment seg, int idx)
 void CodeGen::Assign(const std::string& dst, const std::string src, int noffs)
 {
 	out << "@" << src << "\n"
-	       "D=A\n"
+	       "D=M\n"
 	       "@" << noffs << "\n"
 	       "A=D-A\n"
 	       "D=M\n"
