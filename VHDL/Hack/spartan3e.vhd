@@ -1,41 +1,31 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    14:49:15 03/23/2011 
--- Design Name: 
--- Module Name:    spartan3e - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
 
 entity spartan3e is
-end spartan3e;
+	port (
+		clk : in std_logic;
+		
+		btn_south, btn_west, btn_north: in std_logic;
+		
+		led : out std_logic_vector(7 downto 0)
+	);
+end;
 
-architecture Behavioral of spartan3e is
-
+architecture behavioral of spartan3e is
+	signal reset : std_logic;
 begin
-
-
-end Behavioral;
-
+	reset <= btn_south;
+	
+	led(7 downto 2) <= "000000";
+	
+	test : process(clk, reset)
+	begin
+		if reset = '1' then
+		
+		elsif clk'event and clk = '1' then
+			led(0) <= btn_west;
+			led(1) <= btn_north;
+		end if;
+	end process;
+end;
