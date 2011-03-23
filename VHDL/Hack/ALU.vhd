@@ -68,7 +68,7 @@ begin
 	ng <= result(15);
 	
 	tmp(0) <= result(0) nor result(1);
-	nor16: for i in 2 to 13 generate
+	nor16: for i in 2 to 14 generate
 		tmp(i-1) <= result(i) nor tmp(i-2);
 	end generate;
 	zr <= result(15) nor tmp(13);

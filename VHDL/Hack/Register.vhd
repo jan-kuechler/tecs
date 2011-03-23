@@ -26,7 +26,7 @@ entity Register16 is
 			  load : in  STD_LOGIC;
            z : out  STD_LOGIC_VECTOR(15 downto 0)
 			 );
-end Register;
+end Register16;
 
 architecture Behavioral of Register16 is
 

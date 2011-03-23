@@ -45,7 +45,7 @@ architecture Behavioral of Add16 is
 				  sum, carry : out  STD_LOGIC);
 	end component;
 
-	signal c : std_logic_vector(15 downto 0);
+	signal c : std_logic_vector(14 downto 0);
 
 begin
 
@@ -56,7 +56,7 @@ begin
 		carry => c(0)
 	);
 
-	gen_add: for i in 1 to 15 generate
+	gen_add: for i in 1 to 14 generate
 		add : FullAdder port map (
 			a => a(i),
 			b => b(i),
@@ -65,6 +65,14 @@ begin
 			carry => c(i)
 		);
 	end generate;
+	
+	add15: FullAdder port map (
+		a => a(15),
+		b => b(15),
+		c => c(14),
+		sum => sum(15),
+		carry => open
+		);
 
 end Behavioral;
 
