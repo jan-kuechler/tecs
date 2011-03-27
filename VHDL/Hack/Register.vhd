@@ -17,6 +17,15 @@
 -- Additional Comments: 
 --
 ----------------------------------------------------------------------------------
+
+--component Register16 is
+--	Port ( clk : in  STD_LOGIC;
+--	       x : in std_logic_vector(15 downto 0);
+--	       load : in  STD_LOGIC;
+--	       z : out  STD_LOGIC_VECTOR(15 downto 0)
+--			);
+--end component;
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
