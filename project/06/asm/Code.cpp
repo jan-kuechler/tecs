@@ -79,6 +79,7 @@ SymbolTable FirstPass(const std::vector<Command>& cmds, Diag& diag)
 	InitSymTab(symtab);
 
 	int pos = 0; // real code position, labels do not count
+	bool didWarn = false;
 
 	for (auto c = cmds.begin(); c != cmds.end(); ++c) {
 		switch (c->GetType()) {
@@ -86,6 +87,11 @@ SymbolTable FirstPass(const std::vector<Command>& cmds, Diag& diag)
 			if (symtab.find(c->GetSymbol()) != symtab.end())
 				diag.Error(c->GetPosition(), diag::err_lbl_redef) << c->GetSymbol();
 			symtab[c->GetSymbol()] = pos;
+
+			if (pos >= MAX_CONST && !didWarn) {
+				diag.Warning(c->GetPosition(), diag::wrn_far_sym) << c->GetSymbol();
+				didWarn = true;
+			}
 			break;
 
 		case Command::A_CMD:
@@ -93,6 +99,8 @@ SymbolTable FirstPass(const std::vector<Command>& cmds, Diag& diag)
 			pos++;
 			break;
 		}
+
+
 	}
 
 	return symtab;

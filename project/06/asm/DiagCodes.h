@@ -23,6 +23,7 @@ namespace diag {
 		WARNINGS, 
 
 		wrn_const,
+		wrn_far_sym,
 	};
 };
 

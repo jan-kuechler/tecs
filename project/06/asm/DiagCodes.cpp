@@ -15,6 +15,7 @@ hack::DiagClient::Message AsmDiagClient::messages[] = {
 	ERR(err_unk_comp_code, "Unknown compare code '%1%'.", 1),
 	ERR(err_unk_jump_code, "Unknown jump code '%1%'.", 1),
 	WRN(wrn_const, "Constant '%1%' is truncated to '%2%'.", 2),
+	WRN(wrn_far_sym, "The symbol '%1%' and all following symbols are in an invalid range.", 1),
 };
 
 hack::DiagClient::Message* AsmDiagClient::GetMessages(size_t &num) const
