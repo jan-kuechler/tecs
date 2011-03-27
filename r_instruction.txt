@@ -1,0 +1,65 @@
+              R-Instruction
+              =============
+
+- 3 Register Compute-Intruction (=> kein Jump)
+- Ermöglicht 6 neue Register
+- Kompatibel mit allen alten Befehlen
+
+
+Format
+------
+
+ 1 10 cccccc x sss ddd
+ 
+ |__| |____| | |_| |_|
+
+  ID    ALU  | SRC DST 
+
+            SEL
+            
+ID  - Command identifikation
+ALU - 6 ALU Flags, wie bei der C-Instruction
+SEL - 1. ALU Eingang, A/D-Register
+SRC - 2. ALU Eingang, eins von 8 Registern
+DST - ALU Ausgang, eins von 8 Registern
+
+SEL-Bit:
+	x = 0:  DST = D (op) SRC
+	x = 1:  DST = A (op) SRC
+	
+Mögliche Operationen:
+
+	DST = 0, 1, -1
+	DST = SRC, -SRC, !SRC
+	DST = SRC+1, SRC-1
+	DST = A/D + SRC, A/D - SRC, SRC - A/D
+	DST = A/D & SRC, A/D | SRC
+
+
+Register Addressierung
+----------------------
+
+	Addr | Register
+	-----+---------
+	 000 | A-Register
+	 001 | D-Register
+	 010 | SP
+	 011 | LCL
+	 100 | ARG
+	 101 | THIS
+	 110 | THAT
+	 111 | AUX
+ 
+ 
+Assembler-Mnemonics
+-------------------
+
+- Aufbau wie C-Instruction
+- Beispiel:
+
+	SP=SP+1
+	AUX=A|LCL
+	THIS=0
+	A=SP
+	D=!ARG
+	etc...
