@@ -34,7 +34,7 @@ void CodeGen::Generate(const std::string& fileName, const std::vector<Command>& 
 	diag.SetErrorFatal(false, "Code generation");
 
 	curFile = fileName;
-	fileId = fs::path(fileName).stem();
+	fileId = fs::path(fileName).stem().string();
 
 	curFunc = "";
 

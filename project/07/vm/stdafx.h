@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include "targetver.h"
+#ifndef LINUX
+	#include "targetver.h"
+#endif
 
 #include <cassert>
 
@@ -23,6 +25,7 @@
 #include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>

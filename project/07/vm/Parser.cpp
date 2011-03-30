@@ -9,7 +9,7 @@ namespace fs = boost::filesystem;
 Parser::Parser(const fs::path& file, hack::Diag& diag)
 	: diag(diag)
 {
-	fileName = file.filename();
+	fileName = file.filename().string();
 
 	std::ifstream in(file.string());
 	std::string line;
@@ -47,7 +47,7 @@ void Parser::Parse()
 std::vector<std::string> Parser::SplitAndRemoveComments(const std::string& line) const
 {
 	std::vector<std::string> parts;
-	boost::split(parts, line, std::isspace, boost::algorithm::token_compress_on);
+	boost::split(parts, line, [](char c) { return std::isspace(c); }, boost::algorithm::token_compress_on);
 
 	// Filter out comments
 	size_t end = parts.size();
