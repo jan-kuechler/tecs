@@ -44,6 +44,9 @@ struct FatalError : public std::runtime_error
 	FatalError(std::string where)
 	: std::runtime_error((where.empty() ? std::string("Fatal error") : (where + ": fatal error.")).c_str()), where(where)
 	{ }
+
+	~FatalError() throw()
+	{ }
 };
 
 class Diag

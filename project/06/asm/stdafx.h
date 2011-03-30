@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include "targetver.h"
+#ifndef LINUX
+	#include "targetver.h"
+#endif
 
 #include <cassert>
 
