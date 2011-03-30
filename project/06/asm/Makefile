@@ -29,6 +29,13 @@ Parser.o: Parser.cpp $(HEADERS)
 $(COMMON)/Diag.o: $(COMMON)/Diag.cpp $(COMMON)/Diag.h
 	@$(CPP) $(CPPFLAGS) -o $(COMMON)/Diag.o -c $(COMMON)/Diag.cpp
 
-.PHONY: clean
+.PHONY: clean clean-common clean-all
 clean:
 	@rm -f *.o
+
+clean-common:
+	@rm -f $(COMMON)/*.o
+
+clean-all: clean clean-common
+	@rm -f $(TARGET)
+
